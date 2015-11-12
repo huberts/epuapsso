@@ -6,10 +6,12 @@ import java.util.zip.{DeflaterOutputStream, Deflater}
 import javax.xml.namespace.QName
 import javax.xml.soap.{MessageFactory, SOAPMessage, SOAPConnectionFactory}
 
+import com.google.inject.Inject
 import org.apache.commons.codec.binary.Base64
+import play.api.Configuration
 import play.api.mvc._
 
-class Application extends Controller {
+class Application @Inject() (configuration: Configuration) extends Controller {
 
   def index = Action { request =>
     request.session.get("TGSID").map { tgsid =>
@@ -57,7 +59,7 @@ class Application extends Controller {
     val issuerElem = artifactResolveElem.addChildElement("Issuer", "urn1")
     issuerElem.addAttribute(new QName("Format"), "")
     issuerElem.addAttribute(new QName("SPProvidedID"), "")
-    issuerElem.addTextNode("testowa.aplikacja.systherm.pl/")
+    issuerElem.addTextNode(configuration.getString("epuapsso.issuer").getOrElse("issuer"))
 
     val artifactElem = artifactResolveElem.addChildElement("Artifact", "urn")
     artifactElem.addTextNode(artifact)
