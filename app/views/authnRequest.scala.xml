@@ -1,0 +1,10 @@
+<samlp:AuthnRequest
+  xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+  ID="@java.util.UUID.randomUUID().toString()"
+  Version="2.0"
+  IssueInstant="@java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)"
+  Destination="https://hetmantest.epuap.gov.pl/DracoEngine2/draco.jsf"
+  IsPassive="false"
+  AssertionConsumerServiceURL="http://localhost:9000/assertionConsumer">
+  <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">testowa.aplikacja.systherm.pl/</saml:Issuer>
+</samlp:AuthnRequest>
