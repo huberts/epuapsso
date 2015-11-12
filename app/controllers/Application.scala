@@ -7,6 +7,7 @@ import javax.xml.namespace.QName
 import javax.xml.soap.{MessageFactory, SOAPMessage, SOAPConnectionFactory}
 
 import com.google.inject.Inject
+import models.UserSession
 import org.apache.commons.codec.binary.Base64
 import play.api.Configuration
 import play.api.mvc._
@@ -37,10 +38,19 @@ class Application @Inject() (configuration: Configuration) extends Controller {
     val baos = new ByteArrayOutputStream()
     response.writeTo(baos)
     baos.close()
-    Ok(new String(baos.toByteArray, "UTF-8")).as("xml")
+    val responseXml = new String(baos.toByteArray, "UTF-8")
+    val nodes = xml.XML.loadString(responseXml)
+    val userSession = new UserSession(
+      (nodes \ "Body" \ "ArtifactResponse" \ "Response" \ "Assertion").head.attribute("ID").head.text,
+      (nodes \ "Body" \ "ArtifactResponse" \ "Response" \ "Assertion" \ "Subject" \ "NameID").head.text,
+      (nodes \ "Body" \ "ArtifactResponse" \ "Response" \ "Assertion" \ "Conditions").head.attribute("NotOnOrAfter").head.text
+    )
+    Redirect(routes.Application.index()).withSession(
+      "TGSID" -> userSession.tgsid
+    )
   }
 
-  private def createRequest(artifact: String) = {
+  private def createRequest(artifact: String): SOAPMessage  = {
     val  request = MessageFactory.newInstance().createMessage()
 
     val envelope = request.getSOAPPart.getEnvelope
@@ -48,8 +58,7 @@ class Application @Inject() (configuration: Configuration) extends Controller {
     envelope.addNamespaceDeclaration("urn", "urn:oasis:names:tc:SAML:2.0:protocol")
     envelope.addNamespaceDeclaration("urn1", "urn:oasis:names:tc:SAML:2.0:assertion")
 
-    val body = envelope.getBody
-    val artifactResolveElem = body.addChildElement("ArtifactResolve", "urn")
+    val artifactResolveElem = request.getSOAPBody.addChildElement("ArtifactResolve", "urn")
     artifactResolveElem.addAttribute(new QName("ID"), java.util.UUID.randomUUID().toString)
     artifactResolveElem.addAttribute(new QName("Version"), "2.0")
     artifactResolveElem.addAttribute(new QName("Destination"), "https://hetmantest.epuap.gov.pl/DracoEngine2/draco.jsf")
